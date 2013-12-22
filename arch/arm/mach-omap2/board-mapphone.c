@@ -204,7 +204,7 @@ static int plat_uart_awake(void)
 	int err;
 
 	err = plat_uart_enable();
-	wake_lock(&st_wk_lock);
+	wake_lock_timeout(&st_wk_lock, 5*HZ);
 	return err;
 }
 
