@@ -601,12 +601,10 @@ void dispc_runtime_put(void)
 		/* Sets DSS max latency constraint
 		 * * (allowing for deeper power state)
 		 * */
-		/* this cause panic
 		omap_pm_set_max_dev_wakeup_lat(
 				&dispc.pdev->dev,
 				&dispc.pdev->dev,
 				dss_powerdomain->wakeup_lat[PWRDM_FUNC_PWRST_OFF]);
-		*/
 
 		r = pm_runtime_put_sync(&dispc.pdev->dev);
 		WARN_ON(r);
