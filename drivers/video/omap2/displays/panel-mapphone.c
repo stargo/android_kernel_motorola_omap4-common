@@ -3851,6 +3851,8 @@ static int mapphone_panel_power_on(struct omap_dss_device *dssdev)
 
 	mapphone_hw_reset(dssdev);
 
+	msleep(100);
+
 	omapdss_dsi_vc_enable_hs(dssdev, dsi_vc_cmd, false);
 
 	if (dssdev->phy.dsi.type == OMAP_DSS_DSI_TYPE_VIDEO_MODE &&
