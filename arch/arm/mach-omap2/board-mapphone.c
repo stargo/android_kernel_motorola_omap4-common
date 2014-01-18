@@ -173,6 +173,7 @@ static int plat_uart_disable(void)
 		if (!err)
 			uart_req = false;
 	}
+	wake_unlock(&st_wk_lock);
 	return err;
 }
 
@@ -187,24 +188,7 @@ static int plat_uart_enable(void)
 		if (!err)
 			uart_req = true;
 	}
-	return err;
-}
-
-static int plat_uart_asleep(void)
-{
-	int err;
-
-	err = plat_uart_disable();
-	wake_unlock(&st_wk_lock);
-	return err;
-}
-
-static int plat_uart_awake(void)
-{
-	int err;
-
-	err = plat_uart_enable();
-	wake_lock_timeout(&st_wk_lock, 5*HZ);
+	wake_lock(&st_wk_lock);
 	return err;
 }
 
@@ -255,8 +239,8 @@ static struct ti_st_plat_data wilink_pdata = {
 	.baud_rate = 3686400,
 	.suspend = plat_wlink_kim_suspend,
 	.resume = plat_wlink_kim_resume,
-	.chip_asleep = plat_uart_asleep,
-	.chip_awake  = plat_uart_awake,
+	.chip_asleep = plat_uart_disable,
+	.chip_awake  = plat_uart_enable,
 	.chip_enable = plat_uart_enable,
 	.chip_disable = plat_uart_disable,
 };
