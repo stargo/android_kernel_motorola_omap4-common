@@ -356,13 +356,13 @@ static int omap4_ehci_phy_hub_control(
 			 * - wait 1ms
 			 * - switch back to external clock
 			 */
-			wait_for_local_clock(4 * 1000 * 1000);
+			wait_for_local_clock(16 * 1000 * 1000);
 			temp_reg = omap_readl(L3INIT_HSUSBHOST_CLKCTRL);
 			temp_reg |= 1 << 9;
 			temp_reg &= ~(1 << 25);
 			omap_writel(temp_reg, L3INIT_HSUSBHOST_CLKCTRL);
 
-			wait_for_local_clock(1 * 1000 * 1000);
+			wait_for_local_clock(4 * 1000 * 1000);
 
 			temp_reg &= ~(1 << 9);
 			temp_reg |= 1 << 25;
