@@ -92,8 +92,20 @@ static void usb_phy_resume_workaround(struct ehci_hcd *ehci)
 	int port = 1;
 	int reg_id = 4; /* Function Control */
 	int data = 0x40; /* MSUSPEND=1 */
+	int reg;
 
-	omap_ehci_ulpi_write(ehci_to_hcd(ehci), data & 0xff, reg_id, 10);
+	reg = (data & 0xFF)
+		| (reg_id << EHCI_INSNREG05_ULPI_REGADD_SHIFT)
+		| (2 << EHCI_INSNREG05_ULPI_OPSEL_SHIFT) /* write */
+		| ((port + 1) << EHCI_INSNREG05_ULPI_PORTSEL_SHIFT)
+		| (1 << EHCI_INSNREG05_ULPI_CONTROL_SHIFT);
+
+	ehci_write(ehci->caps, EHCI_INSNREG05_ULPI, reg);
+
+	/* in practice, we measure this register write to take effect
+	 * within 1-10 usec
+	 */
+	udelay(30);
 }
 
 static int omap4_ehci_phy_hub_control (
@@ -284,9 +296,7 @@ static int omap4_ehci_phy_hub_control (
 				ehci_writel(ehci,
 					temp & ~(PORT_RWC_BITS | PORT_RESUME),
 					status_reg);
-#if 0
 				usb_phy_resume_workaround(ehci);
-#endif
 				retval = handshake(ehci, status_reg,
 					   PORT_RESUME, 0, 2000 /* 2msec */);
 				if (retval != 0) {
