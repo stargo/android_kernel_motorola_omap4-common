@@ -610,7 +610,7 @@ static int omap4_ehci_tll_hub_control(
 	unsigned long	flags;
 	int		retval = 0;
 	u32		runstop, temp_reg, tll_reg;
-	u32		cpu = smp_processor_id();
+	u32		cpu;
 
 	tll_reg = (u32)OMAP2_L4_IO_ADDRESS(L3INIT_HSUSBTLL_CLKCTRL);
 
@@ -687,6 +687,7 @@ static int omap4_ehci_tll_hub_control(
 
 				/* If we have another CPU online, force it
 				   to not mess with MPCore */
+				cpu = smp_processor_id();
 				if (cpu_online(cpu ^ 0x1)) {
 					tll_WA_info.stopped = 0;
 					tll_WA_info.done = 0;
@@ -713,6 +714,8 @@ static int omap4_ehci_tll_hub_control(
 
 				/*Release other CPU*/
 				tll_WA_info.done = 1;
+				dsb();
+
 				retval = handshake(ehci, status_reg,
 					   PORT_RESUME, 0, 2000 /* 2msec */);
 
@@ -727,10 +730,6 @@ static int omap4_ehci_tll_hub_control(
 				ehci_writel(ehci, (runstop),
 						&ehci->regs->command);
 				(void) ehci_readl(ehci, &ehci->regs->command);
-				handshake(ehci, &ehci->regs->status,
-							STS_HALT,
-							0,
-							2000);
 
 				if (retval != 0) {
 					ehci_err(ehci,
@@ -740,12 +739,6 @@ static int omap4_ehci_tll_hub_control(
 									flags);
 					return -EPIPE;
 				}
-
-				if (!(ehci_readl(ehci, status_reg) & PORT_PE))
-					ehci_err(ehci,
-						"port %d disabled after resume\n",
-						wIndex + 1);
-
 				temp &= ~(PORT_SUSPEND|PORT_RESUME|(3<<10));
 			}
 		}
