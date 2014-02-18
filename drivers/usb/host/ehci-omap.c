@@ -983,6 +983,7 @@ static int ehci_hcd_omap_probe(struct platform_device *pdev)
 	}
 
 	pm_runtime_get_sync(dev->parent);
+	*pdata->usbhs_update_sar = 1;
 
 	/*
 	 * An undocumented "feature" in the OMAP3 EHCI controller,
@@ -1127,7 +1128,6 @@ static int ehci_omap_bus_suspend(struct usb_hcd *hcd)
 
 	if (hcd->self.connection_change) {
 		dev_err(dev, "Connection state changed\n");
-		save_usb_sar_regs();
 		hcd->self.connection_change = 0;
 	}
 
@@ -1168,10 +1168,17 @@ static int ehci_omap_bus_resume(struct usb_hcd *hcd)
 {
 	struct device *dev = hcd->self.controller;
 	struct ehci_hcd_omap_platform_data  *pdata;
+	struct omap_hwmod	*oh;
 	struct clk *clk;
 	int i;
 
+	int ret;
+
 	dev_dbg(dev, "ehci_omap_bus_resume\n");
+
+	oh = omap_hwmod_lookup(USBHS_EHCI_HWMODNAME);
+
+	ret = omap_hwmod_disable_ioring_wakeup(oh);
 
 	/* Re-enable any external transceiver clocks first */
 	pdata = dev->platform_data;
@@ -1185,12 +1192,13 @@ static int ehci_omap_bus_resume(struct usb_hcd *hcd)
 			OCP_INITIATOR_AGENT,
 			(200*1000*4));
 
-	if (dev->parent) {
+	if (dev->parent)
 		pm_runtime_get_sync(dev->parent);
-	}
 
 	set_bit(HCD_FLAG_HW_ACCESSIBLE, &hcd->flags);
 	enable_irq(hcd->irq);
+
+	*pdata->usbhs_update_sar = 1;
 
 	return ehci_bus_resume(hcd);
 }
